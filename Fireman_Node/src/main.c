@@ -10,7 +10,7 @@
 
 #define MAX_NODES 16
 #define BROADCAST_MAC "\xFF\xFF\xFF\xFF\xFF\xFF"
-#define TIMEOUT 10000000
+#define TIMEOUT 50000000
 
 typedef struct
 {
@@ -56,16 +56,28 @@ void app_main()
     setupButtons();
     sendBroadcast("CONNECT");
 
+    int64_t last_heartbeat_time = esp_timer_get_time();
+    int64_t last_general_check_time = esp_timer_get_time();
+
     while (1)
     {
+        int64_t now = esp_timer_get_time();
+        handleButtonInterrupt(sendBroadcast);
+        if (now - last_heartbeat_time >= 6 * TIMEOUT)
+        {
+            sendBroadcast("HEARTBEAT");
+            last_heartbeat_time = now;
+        }
 
-        handleButtonPresses(sendBroadcast);
-        removeInactiveNodes();
-        printActiveNodes();
+        if (now - last_general_check_time >= TIMEOUT)
+        {
 
-        sendBroadcast("HEARTBEAT");
+            removeInactiveNodes();
+            printActiveNodes();
+            last_general_check_time = now;
+        }
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
