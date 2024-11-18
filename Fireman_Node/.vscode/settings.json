@@ -1,0 +1,7 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "esp_spiffs.h": "c",
+        "node_buttonlogic.h": "c"
+    }
+}
