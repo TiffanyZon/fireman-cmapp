@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "node_buttonLogic.h"
+#include "state_machine.h"
 
 #define MAX_NODES 16
 #define BROADCAST_MAC "\xFF\xFF\xFF\xFF\xFF\xFF"
