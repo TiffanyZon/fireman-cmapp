@@ -176,7 +176,6 @@ void removeInactiveNodes()
     }
 }
 
-// EXTRA --> Ska ev synas på display
 void printActiveNodes()
 {
     printf("Aktiva noder:\n");
