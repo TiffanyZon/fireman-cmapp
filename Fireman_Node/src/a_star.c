@@ -34,12 +34,12 @@ static Node* find_in_open_list(Node *openList, int openSize, Point position) {
     return NULL;
 }
 
-// دالة للبحث عن العقدة في القائمة المغلقة
+
 static Node* find_in_closed_list(int closedList[GRID_SIZE][GRID_SIZE], Point position) {
-    // قم بالبحث عن العقدة في القائمة المغلقة
+    
     if (closedList[position.x][position.y] == 1) {
         Node* foundNode = malloc(sizeof(Node));
-        // تم العثور على العقدة، ولكن يجب ضبط خصائصها هنا بناءً على كيفية تخزين الوالد في القائمة المغلقة.
+        
         foundNode->position = position;
         return foundNode;
     }
@@ -156,7 +156,7 @@ void create_grid(int grid[GRID_SIZE][GRID_SIZE]) {
         {0, 0, 0, 0, 0}
     };
 
-    // نسخ الخريطة المحددة إلى الخريطة المرسلة
+
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             grid[i][j] = predefined_grid[i][j];
