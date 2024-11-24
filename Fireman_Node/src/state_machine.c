@@ -10,6 +10,9 @@
 #define STATE_HELP_COLLEAGUE 3
 #define STATE_WALK_PERSON_OUT 4
 
+//#define STATE_FIND_PATH
+
+
 #define FIRE 'F'
 #define PERSON 'P'
 #define EMPTY 'X'
@@ -135,6 +138,15 @@ void find() // OM KNAPP 1
     ask_for_help();    
     state = STATE_HANDLE_SITUATON;
 }
+
+/*void find_path(){
+   int grid[GRID_SIZE][GRID_SIZE];
+    create_grid(grid); 
+    Point start ={espX.coordinates[0],espX.coordinates[1]};
+    Point start = {0, 3}; 
+    Point goal = {3, 3};  
+    run_astar_algorithm(grid, start, goal);   
+}*/
 
 
 void send_message(const uint8_t *macAddress, const char *message){

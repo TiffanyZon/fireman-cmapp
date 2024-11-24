@@ -4,6 +4,7 @@
 
 void search();
 void find();
+// void find_path();
 void registerPeers();
 void recieveCallback(const uint8_t *macAddr, const uint8_t *incomingData, int dataLen);
 void ask_for_help();
