@@ -1,13 +1,17 @@
 #include <stdio.h>
 #include <string.h>
-#include "esp_now.h"
-#include "esp_wifi.h"
-#include <esp_timer.h>
-#include <nvs_flash.h>
+//#include "esp_now.h"
+//#include "esp_wifi.h"
+//#include <esp_timer.h>
+//#include <nvs_flash.h>
+#include <unistd.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "node_buttonLogic.h"
+//#include "node_buttonLogic.h"
 #include "state_machine.h"
+#include "communication.h"
+#include "test.h"
+
 
 #define MAX_NODES 16
 #define BROADCAST_MAC "\xFF\xFF\xFF\xFF\xFF\xFF"
@@ -22,9 +26,62 @@ typedef struct
 Node nodes[MAX_NODES];
 int node_count = 0;
 
-uint8_t selfMac[6];
 
-void initESPNow();
+typedef struct
+{
+    char name[10];
+    int distance;
+    uint8_t macAddress[6];
+    int status; // 0 = ledig 1 = upptagen
+    int coordinates[2];
+} NodeJojjo;
+
+NodeJojjo test1 = {"esp1", 3, {0x24, 0x62, 0xAB, 0xF3, 0xA8, 0x80}, 0, {3,6}};
+NodeJojjo test2 = {"esp2", 6, {0xA8, 0x42, 0xE3, 0xAB, 0xBB, 0x08}, 0, {2,1}};
+NodeJojjo test3 = {"esp3", 3, {0xD8, 0xBC, 0x38, 0xE4, 0x51, 0x44}, 1, {6,8}};
+NodeJojjo test4 = {"esp4", 9, {0x30, 0xC6, 0xF7, 0x30, 0x38, 0xC0}, 0, {4,2}};
+
+NodeJojjo nodesJojjo[4];
+void initializeNodes() {
+    nodesJojjo[0] = test1;
+    nodesJojjo[1] = test2;
+    nodesJojjo[2] = test3;
+    nodesJojjo[3] = test4;
+}
+
+
+
+//uint8_t selfMac[6] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC}; 
+
+int main()
+{
+    printf("HELLO IN MAIN");
+    state_machine();
+    test_fire_call();
+        test_fire_accept1(); 
+        test_fire_accept2(); 
+        test_fire_accept3(); 
+        state_machine();
+        state_machine();
+        state_machine();
+        state_machine();
+        state_machine();
+        state_machine();
+        state_machine();
+        state_machine();
+        state_machine();
+        state_machine();
+        
+
+    return 0;
+
+}
+
+//gcc src/main.c src/state_machine.c src/communication.c src/test.c -o test_program
+// ./test_program
+
+
+/*void initESPNow();
 void sendBroadcast(const char *message);
 void handleIncomingMessage(const esp_now_recv_info_t *info, const uint8_t *data, int len);
 void updateNode(const uint8_t *mac);
@@ -33,6 +90,9 @@ void printActiveNodes();
 
 void app_main()
 {
+    printf("HELLO IN MAIN");
+
+
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
@@ -95,6 +155,29 @@ void initESPNow()
     peerInfo.encrypt = false;
 
     ESP_ERROR_CHECK(esp_now_add_peer(&peerInfo));
+}
+
+
+ * Jag tror vi behöver både den ovan och den under (?)
+
+void registerPeers()
+{
+    for (int i = 0; i < sizeof(nodesJojjo) / sizeof(nodesJojjo[0]); ++i)
+    {
+        esp_now_peer_info_t peerInfo = {};
+        memcpy(peerInfo.peer_addr, nodesJojjo[i].macAddress, 6);
+        if (!esp_now_is_peer_exist(nodesJojjo[i].macAddress))
+        {
+            if (esp_now_add_peer(&peerInfo) == ESP_OK)
+            {
+                printf("Registered peer: %s\n", nodesJojjo[i].name);
+            }
+            else
+            {
+                printf("Failed to register peer: %s\n", nodesJojjo[i].name);
+            }
+        }
+    }
 }
 
 void sendBroadcast(const char *message)
@@ -188,3 +271,4 @@ void printActiveNodes()
                nodes[i].mac[3], nodes[i].mac[4], nodes[i].mac[5]);
     }
 }
+*/
