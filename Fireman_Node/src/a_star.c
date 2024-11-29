@@ -180,3 +180,18 @@ int run_astar_algorithm(int grid[GRID_SIZE][GRID_SIZE], Point start, Point goal)
     }
 }
 
+void initialize_grid(int grid[GRID_SIZE][GRID_SIZE]) {
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            grid[i][j] = 0; 
+
+        }
+    }
+}
+
+void set_obstacle(int grid[GRID_SIZE][GRID_SIZE], int x, int y) {
+    if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+        grid[x][y] = 1; 
+    }
+}
+

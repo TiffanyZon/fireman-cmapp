@@ -8,6 +8,7 @@
 #include "state_machine.h"
 #include "communication.h"
 #include "test.h"
+#include "a_star.h"
 #define STATE_SEARCH 0
 #define STATE_REQUEST 1
 #define STATE_FIRE 2
@@ -26,7 +27,7 @@
 #define ARRIVED "ARRIVED"
 
 #define QUEUE_SIZE 10
-#define MESSAGE_SIZE 64
+#define MESSAGE_SIZE 32
 
 
 static int currentState = STATE_SEARCH;
@@ -35,9 +36,17 @@ static int waitingCounter = 0;           // Väntar 5 ticks innan svarsmeddeland
 char checkedMessage[15];
 bool ifSelected = false;
 
+static int destX; // Uppdragets x-koordinat
+static int destY;
+int X;
+int Y;
+
 int amountReplied = 0;
 int amountHelping;
 int amountArrived = 0;
+
+double step_x = 1.0; // Hur mycket noden rör sig i x-led, test
+double step_y = 0.5; // Hur mycket noden rör sig i y-led, test 
 
 bool arrived = false;
 
@@ -47,7 +56,9 @@ char sentMissionAccept[20] = "x";
 
 
 void search()
-{ // OM BÅDA HÄNDER SAMTIDIGT. VAD GÖR VI DÅ? VAD ÄR PRIO?
+{ 
+    myCoordX += step_x; 
+    myCoordY += step_y;
 }
 
 /**
@@ -80,20 +91,56 @@ void announce_arrival(int amountHelping)
     }
 }
 
+
 void walk_person_out()
 {
     // Gå till utgång, här behövs samspel mellan noderna som går ut tillsammans
     // när framme PRESS BUTTON 2
 }
 
-/*void find_path(){
-   int grid[GRID_SIZE][GRID_SIZE];
-    create_grid(grid); 
-    Point start ={espX.coordinates[0],espX.coordinates[1]};
-    Point start = {0, 3}; 
-    Point goal = {3, 3};  
-    run_astar_algorithm(grid, start, goal);   
-}*/
+
+void find_path(){
+  int grid[GRID_SIZE][GRID_SIZE];
+    initialize_grid(grid); 
+    // Point start = {espX.coordinates[0], espX.coordinates[1]};
+    Point start = {myCoordX, myCoordY};
+    Point goal = {destX, destY};
+
+
+   /* if (cell == PERSON) {                         
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                if (grid[i][j] == PERSON) {
+                    goal.x = i;
+                    goal.y = j;
+                    break;
+                }
+            }
+        }
+    } else if (cell == FIRE) {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                if (grid[i][j] == FIRE) {
+                    goal.x = i;
+                    goal.y = j;
+                    break;
+                }
+            }
+        } 
+    } else {
+        goal.x = 0; 
+        goal.y = 0;
+    } */
+
+    if (grid[goal.x][goal.y] == 0) {
+        printf("Running A* from (%d, %d) to (%d, %d)\n", start.x, start.y, goal.x, goal.y);
+        run_astar_algorithm(grid, start, goal); 
+    } else {
+        printf("Invalid goal point (%d, %d)\n", goal.x, goal.y);
+    } 
+
+}
+
 
 void state_machine()
 {
@@ -112,8 +159,8 @@ void state_machine()
     }    
 
     else{
-    sscanf(newMessage.message, "%s", checkedMessage);
-    printf("Message says: %s \n",checkedMessage);
+    sscanf(newMessage.message, "%s (%d,%d)", checkedMessage, &X, &Y);
+    printf("Message says: %s \n",checkedMessage);    
     }
 
     switch (currentState){
@@ -123,19 +170,21 @@ void state_machine()
 
         lastState = currentState;
 
-        if (strcmp(checkedMessage, FIRE) == 0){
+        if (strcmp(checkedMessage, FIRE) == 0){ // LÄGGA IN KNAPPTRYCK ATT MEDDELA "JAG ÄR TILLGÄNGLIG", TYP?? 
             strcpy(sentMissionAccept, ACCEPTFIRE);
+            destX = X;
+            destY = Y;
             mission_reply(newMessage, sentMissionAccept, 0);
             currentState = STATE_REQUEST;
         }
 
-        else if (strcmp(checkedMessage, PERSON) == 0){
+        else if (strcmp(checkedMessage, PERSON) == 0){ // LÄGGA IN KNAPPTRYCK ATT MEDDELA "JAG ÄR TILLGÄNGLIG", TYP?? 
             strcpy(sentMissionAccept, ACCEPTPERSON);
             mission_reply(newMessage, sentMissionAccept, 0);
             currentState = STATE_REQUEST;
         }
 
-        else if (strcmp(checkedMessage, COLLEAGUE) == 0){
+        else if (strcmp(checkedMessage, COLLEAGUE) == 0){ // LÄGGA IN KNAPPTRYCK ATT MEDDELA "JAG ÄR TILLGÄNGLIG", TYP?? 
             strcpy(sentMissionAccept, ACCEPTCOLL);
             mission_reply(newMessage, sentMissionAccept, 0);
             currentState = STATE_REQUEST;
@@ -152,21 +201,22 @@ void state_machine()
 
         lastState = currentState;
 
-        if (strcmp(checkedMessage, PERSON) == 0){
+        if (strcmp(checkedMessage, PERSON) == 0){   // LÄGGA IN KNAPPTRYCK ATT MEDDELA "JAG ÄR TILLGÄNGLIG", TYP?? 
             strcpy(sentMissionAccept, ACCEPTPERSON);
             mission_reply(newMessage, sentMissionAccept, 1);
             currentState = STATE_REQUEST;
         }
 
-        else if (strcmp(checkedMessage, COLLEAGUE) == 0){
+        else if (strcmp(checkedMessage, COLLEAGUE) == 0){   // LÄGGA IN KNAPPTRYCK ATT MEDDELA "JAG ÄR TILLGÄNGLIG", TYP?? 
             strcpy(sentMissionAccept, ACCEPTCOLL);
             mission_reply(newMessage, sentMissionAccept, 1);
             currentState = STATE_REQUEST;
         }
 
         else{
-           // arrived = walk_to_destination();
-            if (arrived == true){
+           // arrived = walk_to_destination(); // Var går vi? 
+            find_path();
+            if (arrived == true){           // KNAPPTRYCK FÖR ATT MEDDELA ATT BRANDMANNEN ÄR FRAMME VID BRANDEN?
                 announce_arrival(4);
                 currentState = STATE_WAIT;
             }
@@ -235,7 +285,7 @@ void state_machine()
                 printf("Selected or not: %d ", ifSelected);
 
                 if (ifSelected == true){
-                    currentState = STATE_FIRE;
+                    currentState = STATE_FIRE;                    
                 }
 
                 else if (ifSelected == false){
@@ -284,12 +334,14 @@ void state_machine()
         if (amountArrived == amountHelping){
             amountArrived = 0;
 
-            if (lastState == STATE_FIRE){
+            if (lastState == STATE_FIRE){   // KNAPPTRYCK FÖR ATT MEDDELA ATT ELDEN ÄR SLÄCKT? 
                 currentState = STATE_SEARCH;
             }
 
             else if (lastState == STATE_PERSON){
                 currentState = STATE_HELP_PERSON_OUT;
+                destX = 0;
+                destY = 0;
             }
         }
 

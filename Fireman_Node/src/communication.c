@@ -8,61 +8,49 @@
 #include "state_machine.h"
 
 
-#define MESSAGE_SIZE 64
-#define QUEUE_SIZE 10
-#define MAX_HELPERS 10
+#define MESSAGE_SIZE 32
+#define QUEUE_SIZE 25
+#define LIST_SIZE 10
 
+static int queueStart = 0, queueEnd = 0; // För meddelandekön 
+bool selected; // Boolean som visar om noden blivit vald till uppdrag eller inte
+int personalStatus = 0; // Visar nodens egna status vid tilldelning av uppdrag
+int helpersNeeded = 0; // Hur många noder som behövs för ett specifikt uppdrag 
 
-static int queueStart = 0, queueEnd = 0;
-int distance;
-int accepting = 0;
-bool selected;
+int receivedX; // Uppdragets x-koordinat
+int receivedY; // Uppdragets y-koordinat
+float distance = 0; // Nodens avstånd till uppdraget
+float deltaX = 0; // Används vid uträkning av avstånd
+float deltaY = 0; // Används vid uträkning av avstånd
 
-uint8_t senderMac[6];
-uint8_t macToAll[6];
+int receivedDistance = 0; // Distans till uppdrag för nod som svarat på uppdragsmeddelande
+int receivedStatus = 0; // Status på nod som svarat på uppdragsmeddelande
+int contacted; // Antal noder som kontaktats för att hjälpa till på uppdrag
 
-int personalStatus = 0;
-int helpersArrived = 0;
-int helpersNeeded = 10;
-uint8_t selfMac[6] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC};  // Exempel-MAC
-uint8_t macToAll[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+int myCoordX = 0; // Används just nu för test
+int myCoordY = 0; // // Används just nu för test
 
-Message helpers[MAX_HELPERS];
-
-int myCoordX = 0;
-int myCoordY = 0;
-
-static char receivedMessage[15];
-static int receivedX = 0;
-static int receivedY = 0;
-
-static int destinationX = 0;
-static int destinationY = 0;
-
-int receivedDistance = 0;
-int receivedStatus = 0;
-
-Message emptyMessage = { {0}, {0} };
-
-
-
+char irrelevantMessage; // Del av meddelande, när den delen inte används i funktionen
+char sendMessage[MESSAGE_SIZE];
 
 /**
- * Används när en annan noden svarar på ett call. För att spara deras (och egen) information
+ * Används när en nod svarar på en förfrågan. För att spara information som behövs för att prioritera hjälp.
  */
-
 typedef struct {
-    uint8_t senderMac[6]; // MAC-adressen för noden (den andras)
-    int status; // Status (t.ex. 0 = ledig, 1 = upptagen, etc.)
-    float distance;       // Distansen till händelsen
+    uint8_t senderMac[6]; // Nodens MAC-adress
+    int status;           // Nodens status 
+    float distance;       // Nodens distans till händelsen
 } Response;
 
+Response responseList[LIST_SIZE];
+Message helpers[];
+Message receivedMessageQueue[QUEUE_SIZE]; // Kön för inkommande meddelanden
+Message emptyMessage = { {0}, {0} }; // Ett tomt messageobjekt. Används när kön är tom
 
-Message receivedMessageQueue[QUEUE_SIZE];
-Response responseList[8];
+uint8_t selfMac[6] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC};  // Exempel-MAC, för test
+uint8_t macToAll[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; //Används för test
 
-//char sentMissionMessage[20];
-char sentMissionMessage[20] = "x";
+
 
 
 void receiveCallback(const uint8_t *macAddr, const uint8_t *incomingData, int dataLen)
@@ -92,11 +80,6 @@ void receiveCallback(const uint8_t *macAddr, const uint8_t *incomingData, int da
  */
 Message check_messages(){
 
-  //  char receivedMessage[10];
-    char sendMessage[25];
-    int x; // senders status
-    int y; // senders distans
-
     if(queueStart != queueEnd){
         printf("Reading a message\n");
         Message message = receivedMessageQueue[queueStart];
@@ -117,10 +100,9 @@ Message check_messages(){
  */
 void mission_reply(Message message, const char *messageType, int personalStatus)
 {
-    char sendMessage[20];
-    char sent;
-
-    sscanf(message.message, "%s, (%d,%d)",sent, &receivedX, &receivedY);     
+    char sendMessage[MESSAGE_SIZE];
+    
+    sscanf(message.message, "%s, (%d,%d)",irrelevantMessage, &receivedX, &receivedY);     
     distance = calculate_distance(receivedX,receivedY);
     snprintf(sendMessage, sizeof(sendMessage), "%s (%d,%d)",messageType, personalStatus, distance);
     send_message(macToAll,sendMessage);
@@ -142,14 +124,14 @@ void put_in_help_list(Message message, int number)
 /**
  * 
  */
-bool sort_and_choose_helpers(int replied, int amountNeeded)
+bool sort_and_choose_helpers(int replied, int helpersNeeded)
 {
 
-    char sendMessage[25];
-    int contacted = 0;
-    bool selected = false;
+    char sendMessage[MESSAGE_SIZE];
+    contacted = 0;
+    selected = false;
 
-         printf("HELPERS NEEDED: %d\n",amountNeeded);
+         printf("HELPERS NEEDED: %d\n",helpersNeeded);
      
     for (int i = 0; i < replied - 1; ++i){  
 
@@ -169,7 +151,7 @@ bool sort_and_choose_helpers(int replied, int amountNeeded)
         }
     }
 
-    for (int i = 0; i < replied && contacted < amountNeeded; ++i){ // SKA SKICKA TILL RESPONSELIST ÄR TOM 
+    for (int i = 0; i < replied && contacted < helpersNeeded; ++i){ // SKA SKICKA TILL RESPONSELIST ÄR TOM 
          memcpy(helpers[i].senderMac, responseList[i].senderMac, 6);        
 
         if (memcmp(responseList[i].senderMac, selfMac, 6) == 0){           // Den egna noden är en av de valda hjälparna 
@@ -215,14 +197,14 @@ void send_message(const uint8_t *macAddr, const char *message){
  * Beräknar avstånd
  * Retunerar avstånd i float
  */
-float calculate_distance(int x, int y)
+float calculate_distance(int receivedX, int receivedY)
 {
-    int x2 = 3; // egna nodens koordinater
-    int y2 = 2;
+   // int x2 = 3; // egna nodens koordinater för test 
+   // int y2 = 2; // egna nodens koordinater för test 
 
-    float deltaX = x - x2;
-    float deltaY = y - y2;
-    float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
+    deltaX = receivedX - myCoordX;
+    deltaY = receivedY - myCoordY;
+    distance = sqrt(deltaX * deltaX + deltaY * deltaY);
 
     printf("My distance is: %f\n", distance);
 

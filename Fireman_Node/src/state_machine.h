@@ -8,7 +8,7 @@ void search();
 void find();
 void announce_arrival(int amountHelping);
 void walk_person_out();
-//void find_path();
+void find_path();
 void state_machine();
 
 

@@ -11,21 +11,20 @@
 #include "state_machine.h"
 #include "communication.h"
 #include "test.h"
+#include "a_star.h"
 
 
 #define MAX_NODES 16
 #define BROADCAST_MAC "\xFF\xFF\xFF\xFF\xFF\xFF"
 #define TIMEOUT 50000000
 
-typedef struct
+/* typedef struct
 {
     uint8_t mac[6];
     int64_t last_seen;
 } Node;
 
-Node nodes[MAX_NODES];
-int node_count = 0;
-
+Node nodes[MAX_NODES]; */
 
 typedef struct
 {
@@ -56,6 +55,7 @@ void initializeNodes() {
 int main()
 {
     printf("HELLO IN MAIN");
+ 
     state_machine();
     test_fire_call();
         test_fire_accept1(); 
@@ -77,7 +77,7 @@ int main()
 
 }
 
-//gcc src/main.c src/state_machine.c src/communication.c src/test.c -o test_program
+//gcc src/main.c src/state_machine.c src/communication.c src/test.c src/a_star.c -o test_program
 // ./test_program
 
 
