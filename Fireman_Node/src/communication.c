@@ -76,7 +76,7 @@ void receiveCallback(const uint8_t *macAddr, const uint8_t *incomingData, int da
 
 
 /**
- * 
+ * Kallas på varje "tick" i tillståndsmaskinen innan ett state startat. Meddelandets innehåll avgör vad som ska hända i tillståndet.
  */
 Message check_messages(){
 
@@ -97,6 +97,10 @@ Message check_messages(){
 
 /**
  * Tar emot messageobjektet som noden mottagit, nodens svar på anropet och nodens aktuella tillståndsstatus. 
+ * 
+ * Kallar på funktion som beräknar avstånd till händelsens koordinater. 
+ * 
+ * Skickar meddelande till samtliga noder. Meddelandet innehåller nodens svar på anropet, aktuell tillståndsstatus och avstånd till händelsen. 
  */
 void mission_reply(Message message, const char *messageType, int personalStatus)
 {
@@ -110,7 +114,8 @@ void mission_reply(Message message, const char *messageType, int personalStatus)
 
 
 /**
- * 
+ * Samtliga noder som skickar ett acceptmeddelande av samma typ som aktuell nod sparas i en lista. Nodernas MAC-adress, status och avstånd till händelsen sparas.
+ * Aktuell nods information sparas också i listan.
  */
 void put_in_help_list(Message message, int number)
 {
@@ -122,7 +127,11 @@ void put_in_help_list(Message message, int number)
 
 
 /**
+ * Samtliga noder som svarat på uppdrag, som därav ligger i listan responseList[], sorteras utifrån två parametrar. Första sortering är utifrån nodernas aktuella status.
+ * Noder med status 0 hamnar högst upp på listan, status 1 efter det etc.
+ * Därefter sorteras noderna efter avstånd till händelsen. Dvs noderna hamnar i ordningen: alla med status 0 från minsta avstånd till största, alla med status 1 från minsta avstånd till största etc.
  * 
+ * Om aktuell nod blir utvald att hjälpa till så sparas den och de andra noderna som ska hjälpa till i listan helpers[]. Detta för att noden vid senare tillfälle ska kunna kommunicera med endast de noderna.  
  */
 bool sort_and_choose_helpers(int replied, int helpersNeeded)
 {
@@ -151,7 +160,7 @@ bool sort_and_choose_helpers(int replied, int helpersNeeded)
         }
     }
 
-    for (int i = 0; i < replied && contacted < helpersNeeded; ++i){ // SKA SKICKA TILL RESPONSELIST ÄR TOM 
+    for (int i = 0; i < replied && contacted < helpersNeeded; ++i){ 
          memcpy(helpers[i].senderMac, responseList[i].senderMac, 6);        
 
         if (memcmp(responseList[i].senderMac, selfMac, 6) == 0){           // Den egna noden är en av de valda hjälparna 
@@ -169,7 +178,7 @@ bool sort_and_choose_helpers(int replied, int helpersNeeded)
 
 
 /**
- * 
+ * Just denna används endast för test.
  */
 void send_message(const uint8_t *macAddr, const char *message) 
 {
@@ -178,6 +187,9 @@ void send_message(const uint8_t *macAddr, const char *message)
 }
 
 
+/**
+ * Används när noden ska skicka ett meddelande. 
+ */
 /*
 void send_message(const uint8_t *macAddr, const char *message){ 
                      

@@ -45,7 +45,7 @@ int amountReplied = 0;
 int amountHelping;
 int amountArrived = 0;
 
-double step_x = 1.0; // Hur mycket noden rör sig i x-led, test
+double step_x = 0.5; // Hur mycket noden rör sig i x-led, test
 double step_y = 0.5; // Hur mycket noden rör sig i y-led, test 
 
 bool arrived = false;
@@ -54,15 +54,18 @@ char sentMissionAccept[20] = "x";
 
 
 
-
+/**
+ * Till testing
+ */
 void search()
 { 
     myCoordX += step_x; 
     myCoordY += step_y;
 }
 
+
 /**
- * När brandmän hittar något random. Stannar kvar i statet ett tag
+ * När brandmän hittar något random. Används inte just nu.
  */
 void find() // OM KNAPP HELP
 {
@@ -79,13 +82,13 @@ void find() // OM KNAPP HELP
 
 
 /**
- * 
+ * Meddelar alla noder i helpers-listan att aktuell nod är framme vid händelsen. När samtliga noder meddelat att de är framme så byts tillstånd. 
  */
 void announce_arrival(int amountHelping)
 {
     char sendMessage[25];
 
-    for (int i = 0; i < amountHelping; ++i){ // Meddelar alla i helpers-listan att noden är framme vid brand / skadad person
+    for (int i = 0; i < amountHelping; ++i){ 
         snprintf(sendMessage, sizeof(sendMessage), "ARRIVED (%d,%d)", 0, 0); // behöver inte ha med int här?
         send_message(helpers[i].senderMac, sendMessage);
     }
@@ -98,7 +101,9 @@ void walk_person_out()
     // när framme PRESS BUTTON 2
 }
 
-
+/**
+ * Hittar optimal väg när noden fått koordinater till en destination.
+ */
 void find_path(){
   int grid[GRID_SIZE][GRID_SIZE];
     initialize_grid(grid); 
@@ -153,7 +158,7 @@ void state_machine()
     //  vTaskDelay(pdMS_TO_TICKS(1000));
     Message newMessage = check_messages();
 
-    if (newMessage.message[0] == '\0') { // Kontrollera om strängen är tom
+    if (newMessage.message[0] == '\0') { 
         printf("No message!\n");
         strcpy(checkedMessage, "empty");
     }    
@@ -222,7 +227,7 @@ void state_machine()
             }
 
             else if (arrived == false){
-                printf("Walking to destination\n");
+                printf("Walking to destination\n"); // 
             }
         }
         
